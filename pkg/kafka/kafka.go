@@ -7,6 +7,8 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+type Message = kafka.Message
+
 type KafkaConfig struct {
 	Brokers  []string
 	Topic    string
@@ -16,24 +18,24 @@ type KafkaConfig struct {
 }
 
 type MessageWriter interface {
-	WriteMessages(ctx context.Context, msgs ...kafka.Message) error
+	WriteMessages(ctx context.Context, msgs ...Message) error
 	Close() error
 }
 
 type MessageReader interface {
-	ReadMessage(ctx context.Context) (kafka.Message, error)
+	ReadMessage(ctx context.Context) (Message, error)
 
-	FetchMessage(ctx context.Context) (kafka.Message, error)
+	FetchMessage(ctx context.Context) (Message, error)
 
-	CommitMessages(ctx context.Context, msgs ...kafka.Message) error
+	CommitMessages(ctx context.Context, msgs ...Message) error
 
 	Close() error
 }
 
 func NewWriter(config KafkaConfig) MessageWriter {
 	dialer := &kafka.Dialer{
-		Timeout:       10 * time.Second,
-		DualStack:     true,
+		Timeout:   10 * time.Second,
+		DualStack: true,
 	}
 
 	wConfig := kafka.WriterConfig{
@@ -43,9 +45,8 @@ func NewWriter(config KafkaConfig) MessageWriter {
 		Balancer:     &kafka.LeastBytes{},
 		WriteTimeout: 10 * time.Second,
 		ReadTimeout:  10 * time.Second,
-		BatchTimeout: 1 * time.Second,
+		BatchTimeout: 100 * time.Millisecond,
 		RequiredAcks: -1,
-		Async:        true,
 	}
 
 	return kafka.NewWriter(wConfig)
@@ -53,8 +54,8 @@ func NewWriter(config KafkaConfig) MessageWriter {
 
 func NewReader(config KafkaConfig) MessageReader {
 	dialer := &kafka.Dialer{
-		Timeout:       10 * time.Second,
-		DualStack:     true,
+		Timeout:   10 * time.Second,
+		DualStack: true,
 	}
 
 	rConfig := kafka.ReaderConfig{

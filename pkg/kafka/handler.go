@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-
-	kafkago "github.com/segmentio/kafka-go"
 )
 
 const logCount = 1000
@@ -25,7 +23,7 @@ type handler struct {
 	processSem     chan struct{}
 }
 
-type ProcessFunc func(ctx context.Context, w MessageWriter, msg kafkago.Message)
+type ProcessFunc func(ctx context.Context, w MessageWriter, msg Message)
 
 func NewHandler(ctx context.Context, r MessageReader, w MessageWriter, maxProcMessage int) Handler {
 	return &handler{
@@ -69,9 +67,9 @@ func (handler *handler) handleProcessing(msgProcessor ProcessFunc) {
 	handler.runProcessFunc(msg, msgProcessor)
 }
 
-func (handler *handler) runProcessFunc(msg kafkago.Message, msgProcessor ProcessFunc) {
+func (handler *handler) runProcessFunc(msg Message, msgProcessor ProcessFunc) {
 	handler.processSem <- struct{}{}
-	go func(msg kafkago.Message) {
+	go func(msg Message) {
 		defer func() { <-handler.processSem }()
 
 		msgProcessor(handler.ctx, handler.writer, msg)
